@@ -48,3 +48,24 @@ test('Execute SQL Query with WHERE Clause', async () => {
     expect(result[0]).toHaveProperty('name');
     expect(result[0].id).toBe('2');
 });
+
+// test('Execute SQL Query with WHERE Clause - Invalid Field', async () => {
+//     const query = 'SELECT id, name FROM sample WHERE invalidField = 25';
+//     const result = await executeSELECTQuery(query);
+//     expect(result.length).toBe(0);
+// });
+
+// test('Execute SQL Query with WHERE Clause - Invalid Operator', async () => {
+//     const query = 'SELECT id, name FROM sample WHERE age <> 25';
+//     const result = await executeSELECTQuery(query);
+//     expect(result.length).toBe(0);
+// });
+
+// test('Execute SQL Query with WHERE Clause - Invalid Table', async () => {
+//     const query = 'SELECT id, name FROM invalidTable WHERE age = 25';
+//     try {
+//         await executeSELECTQuery(query);
+//     } catch (error) {
+//         expect(error.message).toBe('Invalid query format');
+//     }
+// });

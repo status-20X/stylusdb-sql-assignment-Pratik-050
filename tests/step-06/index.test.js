@@ -37,9 +37,9 @@ test('Parse SQL Query with WHERE Clause', () => {
         fields: ['id', 'name'],
         table: 'sample',
         whereClauses: [{
-          field: "age",
-          operator: "=",
-          value: "25",
+            field: "age",
+            operator: "=",
+            value: "25",
         }],
     });
 });
@@ -76,4 +76,34 @@ test('Execute SQL Query with Multiple WHERE Clause', async () => {
     const result = await executeSELECTQuery(query);
     expect(result.length).toBe(1);
     expect(result[0]).toEqual({ id: '1', name: 'John' });
+});
+
+test('Execute SQL Query with Multiple WHERE Clause - Invalid Field', async () => {
+    const query = 'SELECT id, name FROM sample WHERE invalidField = 30 AND name = John';
+    const result = await executeSELECTQuery(query);
+    expect(result.length).toBe(0);
+});
+
+test('Execute SQL Query with Multiple WHERE Clause - Invalid Operator', async () => {
+    const query = 'SELECT id, name FROM sample WHERE age <> 30 AND name = John';
+    const result = await executeSELECTQuery(query);
+    expect(result.length).toBe(0);
+});
+
+test('Execute SQL Query with Multiple WHERE Clause - Invalid Table', async () => {
+    const query = 'SELECT id, name FROM invalidTable WHERE age = 30 AND name = John';
+    try {
+        await executeSELECTQuery(query);
+    } catch (error) {
+        expect(error.message).toBe('Invalid query format');
+    }
+});
+
+test('Execute SQL Query with Multiple WHERE Clause - Missing Value', async () => {
+    const query = 'SELECT id, name FROM sample WHERE age = 30 AND name =';
+    try {
+        await executeSELECTQuery(query);
+    } catch (error) {
+        expect(error.message).toBe('Invalid query format');
+    }
 });
