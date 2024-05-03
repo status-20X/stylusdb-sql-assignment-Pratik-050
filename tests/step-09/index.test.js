@@ -1,5 +1,5 @@
 const readCSV = require('../../src/csvReader');
-const {parseQuery} = require('../../src/queryParser');
+const parseQuery = require('../../src/queryParser');
 const executeSELECTQuery = require('../../src/index');
 
 test('Read CSV File', async () => {
@@ -174,6 +174,7 @@ test('Execute SQL Query with INNER JOIN and a WHERE Clause', async () => {
 test('Execute SQL Query with LEFT JOIN', async () => {
     const query = 'SELECT student.name, enrollment.course FROM student LEFT JOIN enrollment ON student.id=enrollment.student_id';
     const result = await executeSELECTQuery(query);
+    console.log(result);
     expect(result).toEqual(expect.arrayContaining([
         expect.objectContaining({ "student.name": "Alice", "enrollment.course": null }),
         expect.objectContaining({ "student.name": "John", "enrollment.course": "Mathematics" })

@@ -6,10 +6,20 @@ function parseQuery(query) {
 
     const whereClause = whereSplit.length > 1 ? whereSplit[1].trim() : null;
 
-    const joinSplit = query.split(/\sINNER JOIN\s/i);
+    let joinType = query.match(/\s(INNER|LEFT|RIGHT) JOIN\s/i) ? query.match(/\s(INNER|LEFT|RIGHT) JOIN\s/i)[1] : null;
+    const joinSplit = query.split(/\s(INNER|LEFT|RIGHT) JOIN\s/i);
+
     const selectPart = joinSplit[0].trim();
 
-    const joinPart = joinSplit.length > 1 ? joinSplit[1].trim() : null;
+    let joinPart = null;
+    let joinTable = null;
+    let joinCondition = null;
+    if (joinSplit.length > 1) {
+        joinPart = joinSplit[2].trim();
+        const joinClause = parseJoinClause(joinPart);
+        joinTable = joinClause.joinTable;
+        joinCondition = joinClause.joinCondition;
+    }
 
     const selectRegex = /^SELECT\s(.+?)\sFROM\s(.+)/i;
     const selectMatch = selectPart.match(selectRegex);
@@ -19,7 +29,7 @@ function parseQuery(query) {
 
     const [, fields, table] = selectMatch;
 
-    let joinTable = null, joinCondition = null;
+    // let joinTable = null, joinCondition = null;
     if (joinPart) {
         const joinRegex = /^(.+?)\sON\s([\w.]+)\s*=\s*([\w.]+)/i;
         const joinMatch = joinPart.match(joinRegex);
@@ -44,7 +54,8 @@ function parseQuery(query) {
         table: table.trim(),
         whereClauses,
         joinTable,
-        joinCondition
+        joinCondition,
+        joinType
     };
 }
 
@@ -58,6 +69,28 @@ function parseWhereClause(whereString) {
         }
         throw new Error('Invalid WHERE clause format');
     });
+}
+
+function parseJoinClause(query) {
+    const joinRegex = /\s(INNER|LEFT|RIGHT) JOIN\s(.+?)\sON\s([\w.]+)\s*=\s*([\w.]+)/i;
+    const joinMatch = query.match(joinRegex);
+
+    if (joinMatch) {
+        return {
+            joinType: joinMatch[1].trim(),
+            joinTable: joinMatch[2].trim(),
+            joinCondition: {
+                left: joinMatch[3].trim(),
+                right: joinMatch[4].trim()
+            }
+        };
+    }
+
+    return {
+        joinType: null,
+        joinTable: null,
+        joinCondition: null
+    };
 }
 
 module.exports = parseQuery;
