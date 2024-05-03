@@ -2,36 +2,52 @@ const parseQuery = require('./queryParser');
 const readCSV = require('./csvReader');
 
 async function executeSELECTQuery(query) {
-    const { fields, table, whereClause } = parseQuery(query);
+    const { fields, table, whereClauses, joinTable, joinCondition } = parseQuery(query);
     let data = await readCSV(`${table}.csv`);
 
-    if (whereClause) {
-        const [field, operator, value] = whereClause.split(' ');
-
-        data = data.filter(row => {
-            switch (operator) {
-                case '=':
-                    return row[field] === value;
-                case '<>':
-                    return row[field] !== value;
-                // Add more cases for other operators as needed
-                default:
-                    throw new Error(`Invalid operator "${operator}"`);
-            }
+    if (joinTable && joinCondition) {
+        const joinData = await readCSV(`${joinTable}.csv`);
+        data = data.flatMap(mainRow => {
+            return joinData
+                .filter(joinRow => {
+                    const mainValue = mainRow[joinCondition.left.split('.')[1]];
+                    const joinValue = joinRow[joinCondition.right.split('.')[1]];
+                    return mainValue === joinValue;
+                })
+                .map(joinRow => {
+                    return fields.reduce((acc, field) => {
+                        const [tableName, fieldName] = field.split('.');
+                        acc[field] = tableName === table ? mainRow[fieldName] : joinRow[fieldName];
+                        return acc;
+                    }, {});
+                });
         });
     }
 
-    // Filter the fields based on the query
-    return data.map(row => {
-        const filteredRow = {};
+    const filteredData = whereClauses.length > 0
+        ? data.filter(row => whereClauses.every(clause => evaluateCondition(row, clause)))
+        : data;
+
+    return filteredData.map(row => {
+        const selectedRow = {};
         fields.forEach(field => {
-            if (!row.hasOwnProperty(field)) {
-                throw new Error(`Field "${field}" does not exist in the data`);
-            }
-            filteredRow[field] = row[field];
+            selectedRow[field] = row[field];
         });
-        return filteredRow;
+        return selectedRow;
     });
+}
+
+function evaluateCondition(row, clause) {
+    const { field, operator, value } = clause;
+    switch (operator) {
+        case '=': return row[field] === value;
+        case '!=': return row[field] !== value;
+        case '>': return row[field] > value;
+        case '<': return row[field] < value;
+        case '>=': return row[field] >= value;
+        case '<=': return row[field] <= value;
+        default: return false;
+    }
 }
 
 module.exports = executeSELECTQuery;

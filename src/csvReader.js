@@ -12,7 +12,11 @@ function readCSV(filePath) {
                 resolve(results);
             })
             .on('error', (error) => {
-                reject(error);
+                if (error.code === 'ENOENT') {
+                    reject(new Error(`Table does not exist: ${filePath}`));
+                } else {
+                    reject(error);
+                }
             });
     });
 }
